@@ -1,0 +1,672 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'shop/styles.css'%}">
+</head>
+<body>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12"><nav class="navbar navbar-expand-lg bg-body-tertiary">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="#">Ecom</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/">Home</a>
+                        </li>
+                        <li class="nav-item">
+                        <a class="nav-link" href="/checkout">checkout</a>
+                        </li>
+                        <li class="nav-item">
+                            <button id='cart' type="button" class="btn btn-secondary" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-content="this ur cart" data-bs-html="true">
+                        Cart
+                        </button>
+                        </li>
+                        <li class="nav-item">
+                        <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+                        </li>
+                    </ul>
+                    </div>
+                </div>
+                </nav>
+            </div>
+            
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <form class="card card-sm">
+                    <div class="card-body row no-gutters align-items-center">
+                        <div class="col">
+                            <input type="search" name="item_name" placeholder="Search for products" class="form-control form-control-borderless">
+                            
+                        </div>
+                        <div class="col-auto">        
+                            <button class="btn btn-success" type="submit">Search</button>
+                        </div>
+                    </div>
+                </form>
+                
+            </div>
+        </div>
+        <div class="row">
+            {%for product in product_objects%}
+            <div class="col-md-3">
+                <div class="card">
+                    <img src="{{product.image}}" class="card-img-top">
+                    <div  class="card-body">
+                        <div id="s{{product.id}}" class="card-title">
+                            {{product.title}}
+                        </div> 
+                        <div id="price{{product.id}}" class="card-text">
+                            ${{product.price}}
+                        </div>
+                        <div style="text-align: center;"> 
+                            <a href="/{{product.id}}" class="btn btn-warning">View</a>
+                            <button id="{{product.id}}" class="btn atc btn-warning">Add to cart</button>
+                        </div>
+                           
+                    </div>
+                </div>
+            </div>
+            {%endfor%}
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3 offset-md-4 mx-auto my-5">
+                <ul class="pagination page-item " >
+                    {% if product_objects.has_previous %}
+                        <a class="page-link" href="?page=1">First</a>
+                        <a class="page-link" href="?page={{product_objects.previous_page_number }}">Previous</a>
+                    
+                    {%endif%}
+                    Page {{ product_objects.number }} of {{ product_objects.paginator.num_pages }}
+                    {%  if product_objects.has_next %} {# Fixed: changed has_previous to has_next #}
+                        <a class="page-link" href="?page={{product_objects.next_page_number }}">Next</a>
+                        <a class="page-link" href="?page={{product_objects.paginator.num_pages  }}">Last</a>{# Fixed: added paginator #}
+                    {% endif %}       
+                </ul>
+                
+            </div>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-4.0.0.js" integrity="sha256-9fsHeVnKBvqh3FB2HYu7g2xseAZ5MlN6Kz/qnkASV8U=" crossorigin="anonymous"></script>
+<script type="text/javascript">
+    // ========== UNIVERSAL CART SYSTEM WITH PRICES ==========
+    
+    // Add custom CSS for larger popover
+    const cartStyles = document.createElement('style');
+    cartStyles.textContent = `
+        /* Make popover wider */
+        .popover {
+            max-width: 450px !important;
+            min-width: 380px !important;
+            width: auto !important;
+        }
+        
+        /* Better popover body padding */
+        .popover-body {
+            padding: 1rem !important;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        /* Cart items list styling */
+        .cart-items-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        
+        /* Better button spacing */
+        .cart-items-list .btn-group {
+            gap: 3px;
+        }
+        
+        .cart-items-list .btn-group .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Price styling */
+        .cart-item-price {
+            font-size: 0.85rem;
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .cart-item-total {
+            font-size: 0.85rem;
+            color: #007bff;
+            font-weight: 600;
+        }
+        
+        /* Total price section */
+        .cart-total-section {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        /* Animation for notifications */
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            15% { opacity: 1; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(20px); }
+        }
+        .cart-notification {
+            animation: fadeInOut 2s ease;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 9999;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        /* Add to cart button animation */
+        .atc.btn-success {
+            transition: all 0.3s ease;
+        }
+        
+        /* Product name styling in cart */
+        .cart-product-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        /* Better spacing for cart items */
+        .cart-item {
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+        }
+        
+        /* Price breakdown */
+        .price-breakdown {
+            font-size: 0.85rem;
+        }
+    `;
+    document.head.appendChild(cartStyles);
+    
+    // ========== 1. PRODUCT DATABASE ==========
+    let productsDatabase = JSON.parse(localStorage.getItem('productsDatabase')) || {};
+    
+    // Register product in database
+    function registerProduct(productId, productName, productPrice = null) {
+        if(!productsDatabase[productId]) {
+            // Extract numeric value from price string (e.g., "$100" -> 100)
+            let numericPrice = null;
+            if(productPrice) {
+                let priceMatch = productPrice.toString().match(/\d+(?:\.\d+)?/);
+                numericPrice = priceMatch ? parseFloat(priceMatch[0]) : null;
+            }
+            
+            productsDatabase[productId] = {
+                name: productName,
+                price: numericPrice,
+                priceString: productPrice
+            };
+            localStorage.setItem('productsDatabase', JSON.stringify(productsDatabase));
+        }
+    }
+    
+    // Get product info
+    function getProductInfo(productId) {
+        if(productsDatabase[productId]) {
+            return productsDatabase[productId];
+        }
+        
+        // Try to find on current page
+        let productElement = document.getElementById("s" + productId);
+        if(productElement) {
+            let productName = productElement.innerHTML;
+            let productCard = productElement.closest('.card');
+            let productPrice = productCard ? productCard.querySelector('.card-text')?.innerText : null;
+            
+            registerProduct(productId, productName, productPrice);
+            return { name: productName, price: productPrice };
+        }
+        
+        return { name: "Product " + productId, price: null };
+    }
+    
+    // Register all products on current page
+    function registerCurrentPageProducts() {
+        document.querySelectorAll('[id^="s"]').forEach(function(element) {
+            let productId = element.id.replace('s', '');
+            let productName = element.innerHTML;
+            let productCard = element.closest('.card');
+            let productPrice = productCard ? productCard.querySelector('.card-text')?.innerText : null;
+            
+            registerProduct(productId, productName, productPrice);
+        });
+        console.log("Registered products on current page");
+    }
+    
+    // ========== 2. CART MANAGEMENT ==========
+    // Cart format: cart[productId] = [quantity, name, price]
+    let cart = JSON.parse(localStorage.getItem('cart')) || {};
+    
+    // Fix any old cart data that doesn't have price
+    function migrateCartData() {
+        let needsFix = false;
+        for(let id in cart) {
+            if(Array.isArray(cart[id])) {
+                if(cart[id].length < 3) {
+                    // Add price from database
+                    let productInfo = getProductInfo(id);
+                    let price = productInfo.price;
+                    if(typeof price === 'string') {
+                        let priceMatch = price.match(/\d+(?:\.\d+)?/);
+                        price = priceMatch ? parseFloat(priceMatch[0]) : 0;
+                    }
+                    cart[id][2] = price || 0;
+                    needsFix = true;
+                }
+            } else if(typeof cart[id] === 'object') {
+                // Convert old object format to array
+                let productInfo = getProductInfo(id);
+                let price = productInfo.price;
+                if(typeof price === 'string') {
+                    let priceMatch = price.match(/\d+(?:\.\d+)?/);
+                    price = priceMatch ? parseFloat(priceMatch[0]) : 0;
+                }
+                cart[id] = [cart[id].quantity || 1, cart[id].name || productInfo.name, price || 0];
+                needsFix = true;
+            }
+        }
+        if(needsFix) {
+            localStorage.setItem('cart', JSON.stringify(cart));
+            console.log("Cart migrated to include prices");
+        }
+    }
+    
+    function generateCartContent() {
+        let cartString = `
+            <div style="min-width: 350px;">
+                <h5 class="mb-3">🛒 Your Cart</h5>
+        `;
+        
+        let cartItems = Object.keys(cart);
+        
+        if(cartItems.length === 0) {
+            cartString += "<p class='text-muted text-center mb-0'>Your cart is empty</p>";
+            return cartString + "</div>";
+        }
+        
+        cartString += '<div class="cart-items-list">';
+        
+        let totalItems = 0;
+        let totalPrice = 0;
+        
+        for(var productId in cart){
+            let item = cart[productId];
+            let quantity = item[0];
+            let productName = item[1];
+            let price = item[2] || 0;
+            let itemTotal = quantity * price;
+            
+            totalItems += quantity;
+            totalPrice += itemTotal;
+            
+            // Format price display
+            let priceDisplay = price ? `$${price.toFixed(2)}` : 'Price N/A';
+            let itemTotalDisplay = `$${itemTotal.toFixed(2)}`;
+            
+            cartString += `
+                <div class="cart-item d-flex justify-content-between align-items-start mb-3 pb-2 border-bottom">
+                    <div class="flex-grow-1">
+                        <div class="cart-product-name">${escapeHtml(productName)}</div>
+                        <div class="price-breakdown">
+                            <small class="cart-item-price">${priceDisplay} each</small>
+                            <br>
+                            <small class="cart-item-total">Total: ${itemTotalDisplay}</small>
+                            <br>
+                            <small class="text-muted">Quantity: ${quantity}</small>
+                        </div>
+                    </div>
+                    <div class="btn-group btn-group-sm ms-2" role="group">
+                        <button class="btn btn-outline-secondary decrement-item" data-id="${productId}" title="Decrease">−</button>
+                        <button class="btn btn-outline-danger remove-item" data-id="${productId}" title="Remove">×</button>
+                        <button class="btn btn-outline-secondary increment-item" data-id="${productId}" title="Increase">+</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Format total price
+        let totalPriceDisplay = `$${totalPrice.toFixed(2)}`;
+        
+        cartString += `
+                </div>
+                <hr class="my-2">
+                <div class="cart-total-section">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Total Items:</strong>
+                        <strong>${totalItems}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total Price:</strong>
+                        <strong class="text-primary" style="font-size: 1.1rem;">${totalPriceDisplay}</strong>
+                    </div>
+                </div>
+                <div class="d-grid gap-2 mt-3">
+                    <a href='/checkout' class='btn btn-primary btn-sm'>Proceed to Checkout</a>
+                    <button class='btn btn-outline-secondary btn-sm' id='clearCart'>Clear Cart</button>
+                </div>
+            </div>
+        `;
+        return cartString;
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(text) {
+        if(!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function updateCartDisplay() {
+        let totalItems = 0;
+        let totalPrice = 0;
+        
+        for(let id in cart) {
+            if(cart[id] && Array.isArray(cart[id])) {
+                let quantity = cart[id][0] || 0;
+                let price = cart[id][2] || 0;
+                totalItems += quantity;
+                totalPrice += quantity * price;
+            }
+        }
+        
+        let cartBtn = document.getElementById('cart');
+        if(cartBtn) {
+            cartBtn.innerHTML = `🛒 Cart(${totalItems})`;
+        }
+        
+        // Update popover content
+        if(typeof bootstrap !== 'undefined') {
+            var popoverInstance = bootstrap.Popover.getInstance(document.getElementById('cart'));
+            if(popoverInstance) {
+                popoverInstance.setContent({
+                    '.popover-body': generateCartContent()
+                });
+            }
+        }
+        
+        // Dispatch event for other components
+        window.dispatchEvent(new CustomEvent('cartUpdated', { 
+            detail: { cart: cart, totalItems: totalItems, totalPrice: totalPrice } 
+        }));
+    }
+    
+    function saveCart() {
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartDisplay();
+    }
+    
+    // ========== 3. CART OPERATIONS ==========
+    function addToCart(productId) {
+        // Get product name and price from current page
+        let productName = $("#s" + productId).text();
+        let productPriceText = $("#s" + productId).closest('.card').find('.card-text').text();
+        
+        // Extract numeric price
+        let priceMatch = productPriceText.match(/\d+(?:\.\d+)?/);
+        let productPrice = priceMatch ? parseFloat(priceMatch[0]) : 0;
+        
+        console.log("Adding product:", productId, productName, productPrice);
+        
+        // Register in database
+        registerProduct(productId, productName, productPrice);
+        
+        // Add to cart with [quantity, name, price] format
+        if(cart[productId]) {
+            cart[productId][0] += 1;  // Increment quantity
+        } else {
+            cart[productId] = [1, productName, productPrice];  // [quantity, name, price]
+        }
+        
+        saveCart();
+        
+        // Show feedback with price
+        let priceDisplay = productPrice ? `$${productPrice.toFixed(2)}` : '';
+        showCartFeedback(`${productName} added to cart! ${priceDisplay}`);
+        animateButton(productId);
+        
+        // Show popover
+        if(typeof bootstrap !== 'undefined') {
+            var popoverInstance = bootstrap.Popover.getInstance(document.getElementById('cart'));
+            if(popoverInstance) {
+                popoverInstance.show();
+                setTimeout(function() {
+                    popoverInstance.hide();
+                }, 2000);
+            }
+        }
+    }
+    
+    function removeFromCart(productId) {
+        let productName = cart[productId]?.[1] || "Item";
+        delete cart[productId];
+        saveCart();
+        showCartFeedback(`${productName} removed from cart`);
+        refreshPopover();
+    }
+    
+    function incrementItem(productId) {
+        if(cart[productId]) {
+            cart[productId][0] += 1;
+            saveCart();
+            refreshPopover();
+        }
+    }
+    
+    function decrementItem(productId) {
+        if(cart[productId]) {
+            cart[productId][0] -= 1;
+            if(cart[productId][0] <= 0) {
+                delete cart[productId];
+            }
+            saveCart();
+            refreshPopover();
+        }
+    }
+    
+    function clearCart() {
+        cart = {};
+        saveCart();
+        showCartFeedback("Cart cleared!");
+        refreshPopover();
+    }
+    
+    function showCartFeedback(message) {
+        // Remove existing notification
+        $('.cart-notification').remove();
+        
+        // Show notification
+        let notification = document.createElement('div');
+        notification.className = 'cart-notification';
+        notification.innerHTML = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 2000);
+    }
+    
+    function animateButton(buttonId) {
+        let button = document.getElementById(buttonId);
+        if(button) {
+            let originalText = button.innerHTML;
+            button.classList.add('btn-success');
+            button.innerHTML = '✓ Added!';
+            setTimeout(() => {
+                button.classList.remove('btn-success');
+                button.innerHTML = originalText;
+            }, 1000);
+        }
+    }
+    
+    function refreshPopover() {
+        if(typeof bootstrap !== 'undefined') {
+            var popoverInstance = bootstrap.Popover.getInstance(document.getElementById('cart'));
+            if(popoverInstance) {
+                popoverInstance.setContent({
+                    '.popover-body': generateCartContent()
+                });
+            }
+        }
+    }
+    
+    // ========== 4. POPOVER SETUP ==========
+    function initPopover() {
+        if(typeof bootstrap !== 'undefined' && document.getElementById('cart')) {
+            // Dispose existing popover
+            var existingPopover = bootstrap.Popover.getInstance(document.getElementById('cart'));
+            if(existingPopover) {
+                existingPopover.dispose();
+            }
+            
+            // Create new popover with custom options
+            new bootstrap.Popover(
+                document.getElementById('cart'),
+                {
+                    html: true,
+                    title: '🛒 Shopping Cart',
+                    content: function() {
+                        return generateCartContent();
+                    },
+                    trigger: 'click',
+                    placement: 'bottom',
+                    sanitize: false,
+                    boundary: 'viewport',
+                    container: 'body'
+                }
+            );
+        }
+    }
+    
+    // ========== 5. PAGINATOR SUPPORT ==========
+    function onPageChange() {
+        console.log("Page changed - re-registering products");
+        setTimeout(function() {
+            registerCurrentPageProducts();
+            updateCartDisplay();
+        }, 100);
+    }
+    
+    function setupPaginationObserver() {
+        // Listen for clicks on pagination links
+        $(document).on('click', '.pagination a', function() {
+            setTimeout(onPageChange, 500);
+        });
+        
+        // Use MutationObserver to watch for product container changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if(mutation.addedNodes.length) {
+                    let hasProducts = false;
+                    mutation.addedNodes.forEach(function(node) {
+                        if(node.nodeType === 1 && node.querySelector && node.querySelector('[id^="s"]')) {
+                            hasProducts = true;
+                        }
+                    });
+                    if(hasProducts) {
+                        console.log("New products detected");
+                        registerCurrentPageProducts();
+                    }
+                }
+            });
+        });
+        
+        // Watch the row that contains products
+        let productsContainer = document.querySelector('.row:has(.col-md-3 .card)');
+        if(productsContainer) {
+            observer.observe(productsContainer, { childList: true, subtree: true });
+        }
+    }
+    
+    // ========== 6. EVENT LISTENERS ==========
+    $(document).ready(function() {
+        console.log("Initializing cart system with prices...");
+        
+        // Register products
+        registerCurrentPageProducts();
+        
+        // Migrate old cart data to include prices
+        migrateCartData();
+        
+        // Initialize popover
+        initPopover();
+        
+        // Update display
+        updateCartDisplay();
+        
+        // Set up pagination observer
+        setupPaginationObserver();
+        
+        // Add to cart - using event delegation for dynamic elements
+        $(document).off('click', '.atc').on('click', '.atc', function(e) {
+            e.preventDefault();
+            const item_id = this.id.toString();
+            addToCart(item_id);
+        });
+        
+        // Cart management buttons
+        $(document).on('click', '.remove-item', function() {
+            const productId = $(this).data('id');
+            removeFromCart(productId);
+        });
+        
+        $(document).on('click', '.increment-item', function() {
+            const productId = $(this).data('id');
+            incrementItem(productId);
+        });
+        
+        $(document).on('click', '.decrement-item', function() {
+            const productId = $(this).data('id');
+            decrementItem(productId);
+        });
+        
+        $(document).on('click', '#clearCart', function() {
+            clearCart();
+        });
+        
+        console.log("Cart system with prices ready!");
+        console.log("Current cart:", cart);
+    });
+    
+    // Make functions available globally
+    window.cartSystem = {
+        onPageChange: onPageChange,
+        refreshCart: updateCartDisplay,
+        addToCart: addToCart,
+        getCart: () => cart,
+        getTotalPrice: () => {
+            let total = 0;
+            for(let id in cart) {
+                if(cart[id] && Array.isArray(cart[id])) {
+                    total += (cart[id][0] || 0) * (cart[id][2] || 0);
+                }
+            }
+            return total;
+        }
+    };
+</script>
+</body>
+
+</html>
