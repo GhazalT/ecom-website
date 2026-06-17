@@ -1,0 +1,63 @@
+# Python/Django specific
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.sqlite3
+*.db
+.env
+*.env
+*.env.local
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+virtualenv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Django specific
+*.log
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+.media/
+.uploads/
+
+# Secret files
+SECRET_KEY (should be in environment variables)
+credentials.json
+*.pem
+*.key
+
+# Coverage reports
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Environment variables
+.env
+.env.production
+.env.development
+
+# Node modules (if using npm/webpack)
+node_modules/
+npm-debug.log
+
+# Compiled assets
+dist/
+build/
+*.min.js
+*.min.css
+
+# Package manager files
+package-lock.json (if frontend)
+yarn.lock (if frontend)
